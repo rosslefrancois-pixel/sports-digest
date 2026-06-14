@@ -1,0 +1,2 @@
+# generate.py uses only the Python standard library — nothing to install.
+# (Pinned here in case you later switch to the official SDK: anthropic>=0.40)
