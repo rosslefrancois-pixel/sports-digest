@@ -43,7 +43,8 @@ Return ONE JSON object, nothing else (no prose, no markdown fences). Schema:
       "crest": "nhl",            // same key
       "pill": {"text":"Tonight · 8:00 ET","live":true},   // live:true for tonight; else {"text":"Offseason","accent":true}
       "ctx": "one italic context sentence",
-      "board": [ {"label":"Last","main":"CAR 4 · VGK 2","tag":"Thu 6/11","mono":true,"soft":"ABC"} ],  // OPTIONAL scoreboard rows
+      "board": [ {"label":"Next","main":"vs. Buffalo","soft":"NESN","tag":"Oct 9"},
+                 {"label":"Last","main":"L 2–4 vs BUF","tag":"Apr · R1","mono":true} ],  // see RULES for who needs a board
       "links": [ {"text":"headline","src":"Outlet","url":"https://REAL-URL"} ],   // 2-3, REAL urls from search
       "notes": [ "bullet text, may use <b>bold</b>" ],     // 4-7 for teams; <=1 for NHL
       "bouts": [ {"vs":"<b>A</b> vs. <b>B</b>","wc":"LW Title · Main","title":true} ]  // UFC ONLY
@@ -54,6 +55,14 @@ Return ONE JSON object, nothing else (no prose, no markdown fences). Schema:
 
 RULES
 - Cover Bruins, Patriots, Ohio State football equally; plus an NHL section at top and a UFC section at the bottom.
+- TEAM sections (bruins, pats, osu): ALWAYS include a "board" with exactly two rows, in this order:
+  1) {"label":"Next", ...} = the team's next scheduled game — opponent (use "vs." home / "@" away),
+     "tag" = date (and time if set), "soft" = TV network if known. In the offseason this is the next game
+     on the schedule (preseason or season/Week 1 opener); if the date is only partly known, put what's known
+     (e.g. "tag":"Week 1 · Sept 5" or "Aug · TBD").
+  2) {"label":"Last", ...} = the team's most recent completed game result. "main" = result like
+     "W 24–21 vs MIA" or "L 2–4 vs BUF" with "mono":true; "tag" = date or round (e.g. "Cotton Bowl", "R1").
+  Search each team's schedule and last result. Keep pill as {"text":"Offseason","accent":true} while out of season.
 - NHL: if the playoffs are active, show last result / tonight / next in "board" + series state in "ctx".
   If it's the offseason, drop "board", set pill to {"text":"Offseason","accent":true}, and cover draft/free-agency news.
 - UFC: "board" = most recent completed event result + next event; "bouts" = the next event's main card
@@ -70,6 +79,8 @@ PROMPT = (
     "Use web search to gather the latest for each: NHL (playoffs if active, otherwise "
     "offseason/draft/free-agency), Bruins, Patriots, Ohio State football, and UFC "
     "(most recent completed event + the next scheduled event and its main card). "
+    "For each of the three teams, also look up the next scheduled game and the most "
+    "recent completed result for the two-row team board. "
     "Prefer recent, reputable sources (team sites, NHL.com/UFC.com/ESPN/CBS, NBC Sports "
     "Boston, Pats Pulpit, On SI, Eleven Warriors, etc.).\n\n"
     "Then output the digest as JSON.\n" + SCHEMA
@@ -80,7 +91,7 @@ def call_api():
         "model": MODEL,
         "max_tokens": 8000,
         "messages": [{"role": "user", "content": PROMPT}],
-        "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 14}],
+        "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 18}],
     }
     req = urllib.request.Request(
         API_URL,
